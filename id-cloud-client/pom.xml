@@ -24,5 +24,12 @@
             <artifactId>netty</artifactId>
             <version>3.2.5.Final</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+
     </dependencies>
 </project>
