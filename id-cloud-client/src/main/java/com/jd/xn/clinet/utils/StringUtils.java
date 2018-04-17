@@ -1,5 +1,17 @@
 package com.jd.xn.clinet.utils;
 
+import com.jd.xn.clinet.Constants;
+
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
@@ -48,13 +60,59 @@ public abstract class StringUtils {
             return false;
         }
         int i = 0;
-        if ((length > 1) && (chars[0] == '-')) {}
-        for (i = 1;
-             i < length; i++) {
+        if ((length > 1) && (chars[0] == '-')) {
+            i = 1;
+        }
+        for (; i < length; i++) {
             if (!Character.isDigit(chars[i])) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * 获取类的get/set属性名称集合。
+     *
+     * @param clazz
+     * @param isGet
+     * @return
+     */
+    public static Set<String> getClassProperties(Class<?> clazz, boolean isGet) {
+        Set<String> propNames = new HashSet<String>();
+        try {
+            //获得Bean的信息
+            BeanInfo info = Introspector.getBeanInfo(clazz);
+            PropertyDescriptor[] props = info.getPropertyDescriptors();
+            for (PropertyDescriptor prop : props) {
+                String name = prop.getName();
+                Method method;
+                if (isGet) {
+                    method = prop.getReadMethod();
+                } else {
+                    method = prop.getWriteMethod();
+                }
+                if (!"class".equals(name) && method != null) {
+                    propNames.add(name);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return propNames;
+    }
+
+
+    /**
+     * 把字符串解释为日期对象，采用yyyy-MM-dd HH:mm:ss的格式。
+     */
+    public static Date parseDateTime(String str) {
+        DateFormat format = new SimpleDateFormat(Constants.DATE_TIME_FORMAT);
+        format.setTimeZone(TZ_GMT8);
+        try {
+            return format.parse(str);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

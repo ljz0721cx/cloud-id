@@ -2,10 +2,15 @@ package com.jd.xn.clinet.internal.parser.xml;
 
 import com.jd.xn.clinet.ApiException;
 import com.jd.xn.clinet.internal.mapping.Converter;
+import com.jd.xn.clinet.internal.mapping.Converters;
+import com.jd.xn.clinet.internal.mapping.Reader;
+import com.jd.xn.clinet.utils.StringUtils;
 import com.jd.xn.clinet.utils.XmlUtils;
 import org.w3c.dom.Element;
 
-import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author lijizhen1@jd.com
@@ -39,36 +44,45 @@ public class XmlConverter implements Converter {
      * @return
      */
     private <T> T getModelFromXML(final Element element,
-                                  Class<T> clazz) {
+                                  Class<T> clazz) throws ApiException {
         //如果元素为空返回空
         if (element == null) {
             return null;
         }
         return Converters.convert(clazz, new Reader() {
+            //判断是否有该属性
+            @Override
             public boolean hasReturnField(Object name) {
-                Element childE = XmlUtils.getChildElement(element, (String)name);
+                Element childE = XmlUtils.getChildElement(element, (String) name);
                 return childE != null;
             }
 
+            /**
+             * 读取单个基本对象。
+             * @param name
+             * @return
+             */
+            @Override
             public Object getPrimitiveObject(Object name) {
-                return XmlUtils.getChildElementValue(element, (String)name);
+                return XmlUtils.getChildElementValue(element, (String) name);
             }
 
+            @Override
             public Object getObject(Object name, Class<?> type) throws ApiException {
-                Element childE = XmlUtils.getChildElement(element, (String)name);
+                Element childE = XmlUtils.getChildElement(element, (String) name);
                 if (childE != null) {
                     return XmlConverter.this.getModelFromXML(childE, type);
                 }
                 return null;
             }
 
-            public List<?> getListObjects(Object listName, Object itemName, Class<?> subType) throws ApiException
-            {
+            @Override
+            public List<?> getListObjects(Object listName, Object itemName, Class<?> subType) throws ApiException {
                 List list = null;
-                Element listE = XmlUtils.getChildElement(element, (String)listName);
+                Element listE = XmlUtils.getChildElement(element, (String) listName);
                 if (listE != null) {
                     list = new ArrayList();
-                    List itemEs = XmlUtils.getChildElements(listE, (String)itemName);
+                    List<Element> itemEs = XmlUtils.getChildElements(listE, (String) itemName);
                     for (Element itemE : itemEs) {
                         Object obj = null;
                         boolean isObject = false;
@@ -89,9 +103,10 @@ public class XmlConverter implements Converter {
                             obj = XmlConverter.this.getModelFromXML(itemE, subType);
                         }
                         if (isObject) {
-                            if (obj != null) list.add(obj);
-                        }
-                        else {
+                            if (obj != null) {
+                                list.add(obj);
+                            }
+                        } else {
                             list.add(obj);
                         }
                     }

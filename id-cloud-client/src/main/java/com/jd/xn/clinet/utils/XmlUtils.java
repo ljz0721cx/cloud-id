@@ -4,9 +4,7 @@ package com.jd.xn.clinet.utils;
 import com.jd.xn.clinet.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -24,6 +22,8 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -211,5 +211,132 @@ public final class XmlUtils {
         return in;
     }
 
+    /**
+     * Gets the immediately descendant element from the parent element.
+     *
+     * @param parent  the parent element in the element tree
+     * @param tagName the specified tag name.
+     * @return immediately descendant element of parent element, NULL otherwise.
+     */
+    public static Element getElement(Element parent, String tagName) {
+        List<Element> children = getElements(parent, tagName);
+        if (children.isEmpty()) {
+            return null;
+        } else {
+            return children.get(0);
+        }
+    }
 
+    /**
+     * Gets the descendant elements list from the parent element.
+     *
+     * @param parent  the parent element in the element tree
+     * @param tagName the specified tag name
+     * @return the NOT NULL descendant elements list
+     */
+    public static List<Element> getElements(Element parent, String tagName) {
+        NodeList nodes = parent.getElementsByTagName(tagName);
+        List<Element> elements = new ArrayList<Element>();
+
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node node = nodes.item(i);
+            if (node instanceof Element) {
+                elements.add((Element) node);
+            }
+        }
+
+        return elements;
+    }
+
+    /**
+     * Gets the immediately child elements list from the parent element.
+     *
+     * @param parent  父元素树
+     * @param tagName 指定的标签名
+     * @return the NOT NULL immediately child elements list
+     */
+    public static List<Element> getChildElements(Element parent, String tagName) {
+        NodeList nodes = parent.getElementsByTagName(tagName);
+        List<Element> elements = new ArrayList<Element>();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node node = nodes.item(i);
+            if (node instanceof Element && node.getParentNode() == parent) {
+                elements.add((Element) node);
+            }
+        }
+        return elements;
+    }
+
+    /**
+     * Gets the immediately child element from the parent element.
+     *
+     * @param parent  the parent element in the element tree
+     * @param tagName the specified tag name
+     * @return immediately child element of parent element, NULL otherwise
+     */
+    public static Element getChildElement(Element parent, String tagName) {
+        List<Element> children = getChildElements(parent, tagName);
+        if (children.isEmpty()) {
+            return null;
+        } else {
+            return children.get(0);
+        }
+    }
+
+    /**
+     * Gets the value of the child element by tag name under the given parent
+     * element. If there is more than one child element, return the value of the
+     * first one.
+     *
+     * @param parent  the parent element
+     * @param tagName the tag name of the child element
+     * @return value of the first child element, NULL if tag not exists
+     */
+    public static String getElementValue(Element parent, String tagName) {
+        Element element = getElement(parent, tagName);
+        if (element != null) {
+            return element.getTextContent();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the value of the immediately child element by tag name under the given parent
+     * element. If there is more than one child element, return the value of the
+     * first one.
+     *
+     * @param parent  the parent element
+     * @param tagName the tag name of the child element
+     * @return value of the first child element, NULL if tag not exists
+     */
+    public static String getChildElementValue(Element parent, String tagName) {
+        Element element = getChildElement(parent, tagName);
+        if (element != null) {
+            return element.getTextContent();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the text value of current element.
+     *
+     * @param element the current element
+     * @return text value of the element, NULL if element not exists
+     */
+    public static String getElementValue(Element element) {
+        if (element != null) {
+            NodeList nodes = element.getChildNodes();
+            if (nodes != null && nodes.getLength() > 0) {
+                for (int i = 0; i < nodes.getLength(); i++) {
+                    Node node = nodes.item(i);
+                    if (node instanceof Text) {
+                        return ((Text) node).getData();
+                    }
+                }
+            }
+        }
+        return null;
+    }
 }

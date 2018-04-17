@@ -98,8 +98,8 @@ public class DefaultClient implements JdClient {
             if ("xml".equals(this.format)) {
                 parser = new ObjectXmlParser(request.getResponseClass());
             } else {
-                parser = new ObjectJsonParser(request.getResponseClass(),
-                        this.useSimplifyJson);
+               /* parser = new ObjectJsonParser(request.getResponseClass(),
+                        this.useSimplifyJson);*/
             }
         }
         return null;
