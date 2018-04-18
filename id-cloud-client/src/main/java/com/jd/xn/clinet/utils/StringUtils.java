@@ -115,4 +115,38 @@ public abstract class StringUtils {
             throw new RuntimeException(e);
         }
     }
+
+
+    /**
+     * 对日期进行字符串格式化，采用yyyy-MM-dd HH:mm:ss的格式。
+     */
+    public static String formatDateTime(Date date) {
+        DateFormat format = new SimpleDateFormat(Constants.DATE_TIME_FORMAT);
+        format.setTimeZone(TZ_GMT8);
+        return format.format(date);
+    }
+
+    /**
+     * 对日期进行字符串格式化，采用指定的格式。
+     */
+    public static String formatDateTime(Date date, String pattern) {
+        DateFormat format = new SimpleDateFormat(pattern);
+        format.setTimeZone(TZ_GMT8);
+        return format.format(date);
+    }
+
+    /**
+     * 检查指定的字符串列表是否不为空。
+     */
+    public static boolean areNotEmpty(String... values) {
+        boolean result = true;
+        if (values == null || values.length == 0) {
+            result = false;
+        } else {
+            for (String value : values) {
+                result &= !isEmpty(value);
+            }
+        }
+        return result;
+    }
 }
