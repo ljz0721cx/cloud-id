@@ -1,9 +1,14 @@
 package com.jd.xn.clinet;
 
+import com.jd.xn.clinet.internal.cluster.ClusterManager;
+import com.jd.xn.clinet.internal.cluster.DnsConfig;
 import com.jd.xn.clinet.internal.parser.json.ObjectJsonParser;
 import com.jd.xn.clinet.internal.parser.xml.ObjectXmlParser;
 import com.jd.xn.clinet.utils.JdHashMap;
 import com.jd.xn.clinet.utils.RequestParametersHolder;
+import com.jd.xn.clinet.utils.SecurityUtil;
+
+import java.io.IOException;
 
 /**
  * 默认的client端
@@ -131,8 +136,8 @@ public class DefaultClient implements JdClient {
             }
         }
         RequestParametersHolder requestHolder = new RequestParametersHolder();
-        JdHashMap hashMap = new JdHashMap(request.getTextParams());
-        requestHolder.setApplicationParams(hashMap);
+        JdHashMap appParams = new JdHashMap(request.getTextParams());
+        requestHolder.setApplicationParams(appParams);
 
         //添加协议级请求参数
         JdHashMap protocalMustParams = new JdHashMap();
@@ -154,8 +159,12 @@ public class DefaultClient implements JdClient {
         protocalOptParams.put(Constants.TARGET_APP_KEY, request.getTargetAppKey());
 
         //添加签名参数
-        protocalMustParams.put(Constants.SIGN, TaobaoUtils.signTopRequest(requestHolder, appSecret, signMethod));
-
+        try {
+            protocalMustParams.put(Constants.SIGN, SecurityUtil.signTopRequest(requestHolder, appSecret, signMethod));
+            String realServerUrl = getServerUrl(this.serverUrl, request.getApiMethodName(), session,appParams);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 
         return null;
@@ -168,4 +177,17 @@ public class DefaultClient implements JdClient {
         }
         return Constants.SDK_VERSION;
     }
+
+    public String getServerUrl(String serverUrl, String apiName, String session,JdHashMap appParams) {
+        if(isHttpDnsEnabled){
+            DnsConfig dnsConfig = ClusterManager.GetCacheDnsConfigFrom();
+            if (dnsConfig == null) {
+                return serverUrl;
+            } else {
+                return dnsConfig.getVipUrl(serverUrl);
+            }
+        }
+        return serverUrl;
+    }
+
 }
