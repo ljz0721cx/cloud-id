@@ -4,11 +4,11 @@ import com.jd.xn.clinet.internal.cluster.ClusterManager;
 import com.jd.xn.clinet.internal.cluster.DnsConfig;
 import com.jd.xn.clinet.internal.parser.json.ObjectJsonParser;
 import com.jd.xn.clinet.internal.parser.xml.ObjectXmlParser;
-import com.jd.xn.clinet.utils.JdHashMap;
-import com.jd.xn.clinet.utils.RequestParametersHolder;
-import com.jd.xn.clinet.utils.SecurityUtil;
+import com.jd.xn.clinet.utils.*;
+import com.jd.xn.clinet.utils.files.FileItem;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * 默认的client端
@@ -39,6 +39,7 @@ public class DefaultClient implements JdClient {
     private boolean isHttpDnsEnabled = false;
     //原始请求host
     private String originalHttpHost = null;
+    private boolean topHttpDnsHost;
 
     public DefaultClient(String serverUrl,
                          String appKey,
@@ -148,20 +149,42 @@ public class DefaultClient implements JdClient {
         if (null == timestamp) {
             timestamp = System.currentTimeMillis();
         }
-        protocalMustParams.put(Constants.TIMESTAMP,timestamp);
+        protocalMustParams.put(Constants.TIMESTAMP, timestamp);
         requestHolder.setProtocalOptParams(protocalMustParams);
 
-        JdHashMap protocalOptParams =new JdHashMap();
+        JdHashMap protocalOptParams = new JdHashMap();
         protocalOptParams.put(Constants.FORMAT, format);
         protocalOptParams.put(Constants.SIGN_METHOD, signMethod);
         protocalOptParams.put(Constants.SESSION, session);
         protocalOptParams.put(Constants.PARTNER_ID, getSdkVersion());
         protocalOptParams.put(Constants.TARGET_APP_KEY, request.getTargetAppKey());
-
-        //添加签名参数
         try {
+            //添加签名参数
             protocalMustParams.put(Constants.SIGN, SecurityUtil.signTopRequest(requestHolder, appSecret, signMethod));
-            String realServerUrl = getServerUrl(this.serverUrl, request.getApiMethodName(), session,appParams);
+            //获得真实的请求地址
+            String realServerUrl = getServerUrl(this.serverUrl, request.getApiMethodName(), session, appParams);
+            String sysMustQuery = WebUtils.buildQuery(requestHolder.getProtocalMustParams(), Constants.CHARSET_UTF8);
+            String sysOptQuery = WebUtils.buildQuery(requestHolder.getProtocalOptParams(), Constants.CHARSET_UTF8);
+            //构建请求全路径
+            String fullUrl = WebUtils.buildRequestUrl(realServerUrl, sysMustQuery, sysOptQuery);
+            String rsp = null;
+            // 是否需要压缩响应
+            if (this.useGzipEncoding) {
+                //默认gzip
+                request.getHeaderMap().put(Constants.ACCEPT_ENCODING, Constants.CONTENT_ENCODING_GZIP);
+            }
+            if (getTopHttpDnsHost() != null) {
+                request.getHeaderMap().put(Constants.TOP_HTTP_DNS_HOST, getTopHttpDnsHost());
+            }
+            // 是否需要上传文件
+            if (request instanceof JdUploadRequest) {
+                JdUploadRequest<T> uRequest = (JdUploadRequest<T>) request;
+                //清除空值
+                Map<String, FileItem> fileParams = JdUtils.cleanupMap(uRequest.getFileParams());
+                rsp = WebUtils.doPost(fullUrl, appParams, fileParams, Constants.CHARSET_UTF8, connectTimeout, readTimeout, request.getHeaderMap());
+            } else {
+                rsp = WebUtils.doPost(fullUrl, appParams, Constants.CHARSET_UTF8, connectTimeout, readTimeout, request.getHeaderMap());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -170,16 +193,32 @@ public class DefaultClient implements JdClient {
         return null;
     }
 
+    private String getTopHttpDnsHost() {
+        if (isHttpDnsEnabled) {
+            return originalHttpHost;
+        }
+        return null;
+    }
+
 
     protected String getSdkVersion() {
-        if(isHttpDnsEnabled){
+        if (isHttpDnsEnabled) {
             return Constants.SDK_VERSION_HTTPDNS;
         }
         return Constants.SDK_VERSION;
     }
 
-    public String getServerUrl(String serverUrl, String apiName, String session,JdHashMap appParams) {
-        if(isHttpDnsEnabled){
+    /**
+     * 获得请求的服务URL
+     *
+     * @param serverUrl
+     * @param apiName
+     * @param session
+     * @param appParams
+     * @return
+     */
+    public String getServerUrl(String serverUrl, String apiName, String session, JdHashMap appParams) {
+        if (isHttpDnsEnabled) {
             DnsConfig dnsConfig = ClusterManager.GetCacheDnsConfigFrom();
             if (dnsConfig == null) {
                 return serverUrl;
@@ -189,5 +228,6 @@ public class DefaultClient implements JdClient {
         }
         return serverUrl;
     }
+
 
 }

@@ -1,6 +1,5 @@
 package com.jd.xn.clinet.internal.cluster;
 
-import com.jd.xn.clinet.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +20,8 @@ public final class ClusterManager {
 
 
     public static DnsConfig GetCacheDnsConfigFrom() {
-
+        return dnsConfig;
     }
+
+
 }
