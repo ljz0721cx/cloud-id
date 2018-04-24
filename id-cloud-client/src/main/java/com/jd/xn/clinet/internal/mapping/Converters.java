@@ -8,6 +8,7 @@ import com.jd.xn.clinet.utils.StringUtils;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,5 +94,20 @@ public class Converters {
 
     static {
         baseProps.put(TFResponse.class.getName(), StringUtils.getClassProperties(TFResponse.class, false));
+    }
+
+
+    public static Field getField(Class<?> clazz, PropertyDescriptor prop) {
+        String key = new StringBuilder(clazz.getName()).append("_").append(prop.getName()).toString();
+        Object field = fieldCache.get(key);
+        if (field == null) {
+            try {
+                field = clazz.getDeclaredField(prop.getName());
+            } catch (NoSuchFieldException e) {
+                field = emptyCache; // cache isolated field
+            }
+            fieldCache.put(key, field);
+        }
+        return field == emptyCache ? null : (Field) field;
     }
 }

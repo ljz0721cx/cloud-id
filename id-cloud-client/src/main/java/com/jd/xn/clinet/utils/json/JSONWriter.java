@@ -1,6 +1,7 @@
 package com.jd.xn.clinet.utils.json;
 
 import com.jd.xn.clinet.internal.mapping.ApiField;
+import com.jd.xn.clinet.internal.mapping.ApiListField;
 import com.jd.xn.clinet.internal.mapping.Converters;
 import com.jd.xn.clinet.utils.StringUtils;
 

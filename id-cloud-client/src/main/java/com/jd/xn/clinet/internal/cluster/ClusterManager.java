@@ -24,6 +24,14 @@ public final class ClusterManager {
     private static volatile Thread refreshThread = null;
     private static Set<String> terminationCodeSet = new HashSet<String>();
 
+    static {
+        terminationCodeSet.add("21");
+        terminationCodeSet.add("22");
+        terminationCodeSet.add("25");
+        terminationCodeSet.add("28");
+        terminationCodeSet.add("29");
+    }
+
     public static DnsConfig GetCacheDnsConfigFrom() {
         return dnsConfig;
     }
@@ -35,17 +43,40 @@ public final class ClusterManager {
 
     public static void initRefreshThread(final DefaultClient client) {
         if (refreshThread == null) {
-            synchronized (initLock){
-                if(refreshThread==null){
-                    try{
+            synchronized (initLock) {
+                if (refreshThread == null) {
+                    try {
                         dnsConfig = getDnsConfigFromTop(client);
-                    }catch(ApiException apiException) {
+                    } catch (ApiException apiException) {
                         if (apiException.getErrCode() != null &&
                                 terminationCodeSet.contains(apiException.getErrCode())) {
                             log.error("http dns server termination,errCode:" + apiException.getErrCode() + "," + apiException.getErrMsg());
                             return; // 如果HTTP DNS服务不存在，则退出守护线程
                         }
+                    } catch (Exception e) {
+                        log.error("get http dns config from top fail", e);
                     }
+                    refreshThread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            while (true) {
+                                try {
+                                    int refreshInterval = dnsConfig == null ? 1 : dnsConfig.getRefreshInterval();
+                                    sleep(refreshInterval * 60 * 1000L);
+                                    dnsConfig = getDnsConfigFromTop(client);
+                                } catch (ApiException apiException) {
+                                    if (apiException.getErrCode() != null && terminationCodeSet.contains(apiException.getErrCode())) {
+                                        log.error("http dns server termination,errCode:" + apiException.getErrCode() + "," + apiException.getErrMsg());
+                                        return; // 如果HTTP DNS服务不存在，则退出守护线程
+                                    }
+                                    log.error("get http dns config from top fail," + apiException.getErrCode() + "," + apiException.getErrMsg());
+                                } catch (Exception e) {
+                                    log.error("refresh http dns config from top fail," + e.getMessage(), e);
+                                    sleep(3 * 1000L); // 出错则过3秒重试
+                                }
+                            }
+                        }
+                    });
                 }
             }
         }
@@ -61,4 +92,13 @@ public final class ClusterManager {
             throw new ApiException(rsp.getErrorCode(), rsp.getMsg());
         }
     }
+
+    private static void sleep(long time) {
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
 }

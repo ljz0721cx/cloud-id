@@ -149,4 +149,25 @@ public abstract class StringUtils {
         }
         return result;
     }
+
+
+    /**
+     * 把名称转换为小写加下划线的形式。
+     */
+    public static String toUnderlineStyle(String name) {
+        StringBuilder newName = new StringBuilder();
+        int len = name.length();
+        for (int i = 0; i < len; i++) {
+            char c = name.charAt(i);
+            if (Character.isUpperCase(c)) {
+                if (i > 0) {
+                    newName.append("_");
+                }
+                newName.append(Character.toLowerCase(c));
+            } else {
+                newName.append(c);
+            }
+        }
+        return newName.toString();
+    }
 }

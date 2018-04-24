@@ -278,18 +278,19 @@ public class DefaultClient implements JdClient {
     public void setReadTimeout(int readTimeout) {
         this.readTimeout = readTimeout;
     }
+
     /**
      * 启用http dns
      */
-    public void enableHttpDns(){
+    public void enableHttpDns() {
         WebUtils.setIgnoreHostCheck(true);
         setHttpDnsHost(serverUrl);
         ClusterManager.initRefreshThread(appKey, appSecret);
         isHttpDnsEnabled = true;
     }
 
-    private void setHttpDnsHost(String serverUrl){
-        if(serverUrl == null || serverUrl.isEmpty()){
+    private void setHttpDnsHost(String serverUrl) {
+        if (serverUrl == null || serverUrl.isEmpty()) {
             return;
         }
         try {
