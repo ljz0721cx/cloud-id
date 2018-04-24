@@ -1,9 +1,13 @@
 package com.jd.xn.clinet.internal.cluster;
 
+import com.jd.xn.clinet.ApiException;
+import com.jd.xn.clinet.DefaultClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * 集群管理
@@ -17,11 +21,44 @@ public final class ClusterManager {
     private static final Random random = new Random();
     private static final Object initLock = new Object();
     private static volatile DnsConfig dnsConfig = null;
-
+    private static volatile Thread refreshThread = null;
+    private static Set<String> terminationCodeSet = new HashSet<String>();
 
     public static DnsConfig GetCacheDnsConfigFrom() {
         return dnsConfig;
     }
 
 
+    public static void initRefreshThread(String appKey, String appSecret) {
+        initRefreshThread(new DefaultClient("http://gw.api.taobao.com/top/router/rest", appKey, appSecret));
+    }
+
+    public static void initRefreshThread(final DefaultClient client) {
+        if (refreshThread == null) {
+            synchronized (initLock){
+                if(refreshThread==null){
+                    try{
+                        dnsConfig = getDnsConfigFromTop(client);
+                    }catch(ApiException apiException) {
+                        if (apiException.getErrCode() != null &&
+                                terminationCodeSet.contains(apiException.getErrCode())) {
+                            log.error("http dns server termination,errCode:" + apiException.getErrCode() + "," + apiException.getErrMsg());
+                            return; // 如果HTTP DNS服务不存在，则退出守护线程
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    private static DnsConfig getDnsConfigFromTop(DefaultClient client) throws ApiException {
+        HttpdnsGetRequest req = new HttpdnsGetRequest();
+        HttpdnsGetResponse rsp = client.execute(req);
+        if (rsp.isSuccess()) {
+            return DnsConfig.parse(rsp.getResult());
+        } else {
+            throw new ApiException(rsp.getErrorCode(), rsp.getMsg());
+        }
+    }
 }

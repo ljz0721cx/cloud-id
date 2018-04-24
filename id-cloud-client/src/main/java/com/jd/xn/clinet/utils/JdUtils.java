@@ -1,5 +1,10 @@
 package com.jd.xn.clinet.utils;
 
+
+import com.jd.xn.clinet.utils.json.JSONReader;
+import com.jd.xn.clinet.utils.json.JSONValidatingReader;
+import com.jd.xn.clinet.utils.json.JSONWriter;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,5 +43,28 @@ public abstract class JdUtils {
             }
         }
         return result;
+    }
+
+
+    /**
+     * 把对象结构转换为JSON字符串。
+     *
+     * @param object 对象结构
+     * @return JSON字符串
+     */
+    public static String objectToJson(Object object) {
+        JSONWriter writer = new JSONWriter(false, true);
+        return writer.write(object);
+    }
+
+    /**
+     * 把JSON字符串转化为对象结构。
+     *
+     * @param json JSON字符串
+     * @return 对象结构，一般为Map
+     */
+    public static Object jsonToObject(String json) {
+        JSONReader jr = new JSONValidatingReader();
+        return jr.read(json);
     }
 }

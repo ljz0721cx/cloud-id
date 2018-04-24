@@ -1,5 +1,7 @@
 package com.jd.xn.clinet.internal.cluster;
 
+import com.jd.xn.clinet.utils.JdUtils;
+
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,6 @@ public class DnsConfig {
         } catch (Exception e) {
             return serverUrl;
         }
-
     }
 
 
@@ -76,4 +77,15 @@ public class DnsConfig {
         return serverUrl;
     }
 
+
+    /**
+     * 解析
+     * @param json
+     * @return
+     */
+    public static DnsConfig parse(String json) {
+        DnsConfig dnsConfig = new DnsConfig();
+        Map<?, ?> root = (Map<?, ?>) JdUtils.jsonToObject(json);
+        return null;
+    }
 }

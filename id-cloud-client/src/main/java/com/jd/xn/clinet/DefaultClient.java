@@ -6,8 +6,11 @@ import com.jd.xn.clinet.internal.parser.json.ObjectJsonParser;
 import com.jd.xn.clinet.internal.parser.xml.ObjectXmlParser;
 import com.jd.xn.clinet.utils.*;
 import com.jd.xn.clinet.utils.files.FileItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Map;
 
 /**
@@ -18,6 +21,7 @@ import java.util.Map;
  * @date 2018/4/16 14:45
  */
 public class DefaultClient implements JdClient {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultClient.class);
     protected String serverUrl;
     protected String appKey;
     protected String appSecret;
@@ -185,12 +189,28 @@ public class DefaultClient implements JdClient {
             } else {
                 rsp = WebUtils.doPost(fullUrl, appParams, Constants.CHARSET_UTF8, connectTimeout, readTimeout, request.getHeaderMap());
             }
+            requestHolder.setResponseBody(rsp);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(appKey, request.getApiMethodName(), serverUrl, requestHolder.getAllParams(), System.currentTimeMillis() - start, e.toString());
+            throw new ApiException(e);
         }
-
-
-        return null;
+        T tRsp = null;
+        if (this.needEnableParser) {
+            tRsp = (T) parser.parse(requestHolder.getResponseBody());
+            tRsp.setBody(requestHolder.getResponseBody());
+        } else {
+            try {
+                tRsp = request.getResponseClass().newInstance();
+                tRsp.setBody(requestHolder.getResponseBody());
+            } catch (Exception e) {
+                throw new ApiException(e);
+            }
+        }
+        tRsp.setParams(appParams);
+        if (!tRsp.isSuccess()) {
+            logger.error(appKey, request.getApiMethodName(), serverUrl, requestHolder.getAllParams(), System.currentTimeMillis() - start, tRsp.getBody());
+        }
+        return tRsp;
     }
 
     private String getTopHttpDnsHost() {
@@ -206,6 +226,78 @@ public class DefaultClient implements JdClient {
             return Constants.SDK_VERSION_HTTPDNS;
         }
         return Constants.SDK_VERSION;
+    }
+
+
+    /**
+     * 是否在客户端校验请求参数。
+     */
+    public void setNeedCheckRequest(boolean needCheckRequest) {
+        this.needCheckRequest = needCheckRequest;
+    }
+
+    /**
+     * 是否把响应字符串解释为对象。
+     */
+    public void setNeedEnableParser(boolean needEnableParser) {
+        this.needEnableParser = needEnableParser;
+    }
+
+    /**
+     * 是否采用标准化的JSON格式返回。
+     */
+    public void setUseSimplifyJson(boolean useSimplifyJson) {
+        this.useSimplifyJson = useSimplifyJson;
+    }
+
+
+    /**
+     * 是否忽略HTTPS证书校验。
+     */
+    public void setIgnoreSSLCheck(boolean ignore) {
+        WebUtils.setIgnoreSSLCheck(ignore);
+    }
+
+    /**
+     * 是否启用响应GZIP压缩
+     */
+    public void setUseGzipEncoding(boolean useGzipEncoding) {
+        this.useGzipEncoding = useGzipEncoding;
+    }
+
+    /**
+     * 设置API请求的连接超时时间，默认为15秒。
+     */
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    /**
+     * 设置API请求的读超时时间，默认为30秒。
+     */
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+    /**
+     * 启用http dns
+     */
+    public void enableHttpDns(){
+        WebUtils.setIgnoreHostCheck(true);
+        setHttpDnsHost(serverUrl);
+        ClusterManager.initRefreshThread(appKey, appSecret);
+        isHttpDnsEnabled = true;
+    }
+
+    private void setHttpDnsHost(String serverUrl){
+        if(serverUrl == null || serverUrl.isEmpty()){
+            return;
+        }
+        try {
+            URL url = new URL(serverUrl);
+            originalHttpHost = url.getHost();
+        } catch (Exception e) {
+            throw new RuntimeException("error serverUrl:" + serverUrl, e);
+        }
     }
 
     /**
@@ -227,6 +319,10 @@ public class DefaultClient implements JdClient {
             }
         }
         return serverUrl;
+    }
+
+    public String getAppKey() {
+        return appKey;
     }
 
 
