@@ -12,5 +12,13 @@
     <groupId>com.jd.xn</groupId>
     <artifactId>id-cloud-server</artifactId>
 
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/io.netty/netty-handler -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.39.Final</version>
+        </dependency>
+    </dependencies>
 
 </project>
