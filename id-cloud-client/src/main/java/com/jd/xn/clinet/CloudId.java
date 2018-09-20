@@ -241,7 +241,7 @@ public final class CloudId {
  * 承载生成唯一ID的值
  */
 class Node {
-    private static volatile long current = -1;
+    private volatile long current = -1;
     /**
      * 开始范围
      */
