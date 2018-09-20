@@ -1,9 +1,15 @@
 package com.jd.xn.clinet;
 
+import com.google.common.collect.Sets;
 import com.jd.xn.clinet.exceptions.IdIllgealException;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -64,7 +70,7 @@ public final class CloudId {
         /**
          * 存放执行Node的map
          */
-        private final Map<String, Node> nodeMap = new ConcurrentHashMap<>(2);
+        private final Map<String, Node> nodeMap = new HashMap<>(2);
 
         private String[] currentKey;
         /**
@@ -161,7 +167,7 @@ public final class CloudId {
                     int movedIndex = moveIndex();
                     //预先加载对应值，TODO 这里需要调用远程的请求Handler
                     nodeMap.put(currentKey[movedIndex], new Node(start, start + step - 1));
-                    System.out.println("当前移动的下标地址" + movedIndex + "移动后存放的开始值" + start);
+                    //System.out.println("当前移动的下标地址" + movedIndex + "移动后存放的开始值" + start);
                     start = start + step;
                     return true;
                 });
@@ -200,7 +206,7 @@ public final class CloudId {
      * 承载生成唯一ID的值
      */
     static class Node {
-        private static volatile long current = -1;
+        private volatile long current = -1;
         /**
          * 开始范围
          */
@@ -222,7 +228,6 @@ public final class CloudId {
          * 判断是否为空，等待回收
          */
         boolean isEmpty() {
-            //System.out.println(current + " $$ " + end);
             return current == end;
         }
 
@@ -250,6 +255,15 @@ public final class CloudId {
     }
 
     public static void main(String[] args) {
+
+        //测试生产数据
+        //testProducer();
+        //计算生产的时间
+        produce();
+    }
+
+
+    static void testProducer() {
         ExecutorService executorService = Executors.newFixedThreadPool(4);
         for (int i = 0; i < 300; i++) {
             executorService.submit(new Runnable() {
@@ -260,5 +274,16 @@ public final class CloudId {
             });
         }
         executorService.shutdown();
+
+    }
+
+    static void produce() {
+        Set<Long> set = Sets.newHashSet();
+        Long start = System.currentTimeMillis();
+        for (int j = 0; j < 1000000; j++) {
+            set.add(CloudId.getCloudId());
+        }
+        Long end = System.currentTimeMillis();
+        System.out.println("CloudId产生" + set.size() + "个需要时间" + (end - start) + "ms:" + "平均速率" + Double.valueOf(set.size()) / (end - start) + "个/秒");
     }
 }
