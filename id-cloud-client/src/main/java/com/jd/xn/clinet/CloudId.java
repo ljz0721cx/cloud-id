@@ -143,7 +143,7 @@ public final class CloudId {
             if (null != ee) {
                 throw ee;
             }
-            throw new IdIllgealException("执行获取节点时候失败");
+            throw new IdIllgealException("执行片数据时候失败");
         }
 
 
@@ -252,8 +252,12 @@ public final class CloudId {
     public static void main(String[] args) {
         ExecutorService executorService = Executors.newFixedThreadPool(4);
         for (int i = 0; i < 300; i++) {
-            System.out.println(CloudId.getCloudId());
-
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println(CloudId.getCloudId());
+                }
+            });
         }
         executorService.shutdown();
     }
