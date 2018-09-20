@@ -202,64 +202,12 @@ public final class CloudId {
     }
 
 
-    /**
-     * 承载生成唯一ID的值
-     */
-    static class Node {
-        private volatile long current = -1;
-        /**
-         * 开始范围
-         */
-        private final long start;
-        /**
-         * 截止范围
-         */
-        private final long end;
-
-
-        public Node(long start, long end) {
-            this.start = start;
-            this.end = end;
-            //为了后续的都执行++ 操作
-            current = start - 1;
-        }
-
-        /**
-         * 判断是否为空，等待回收
-         */
-        boolean isEmpty() {
-            return current == end;
-        }
-
-        /**
-         * 计算是否超过了阀值
-         */
-        boolean isUpLoad(long threshold) {
-            if (current + threshold > end) {
-                return true;
-            }
-            return false;
-        }
-
-        /**
-         * 获得ID值
-         *
-         * @return
-         */
-        public synchronized long getId() {
-            if (current == -1L) {
-                throw new IdIllgealException("检查当前获取的current是否正确");
-            }
-            return ++current;
-        }
-    }
-
     public static void main(String[] args) {
 
         //测试生产数据
-        //testProducer();
+        testProducer();
         //计算生产的时间
-        produce();
+        //produce();
     }
 
 
@@ -286,4 +234,58 @@ public final class CloudId {
         Long end = System.currentTimeMillis();
         System.out.println("CloudId产生" + set.size() + "个需要时间" + (end - start) + "ms:" + "平均速率" + Double.valueOf(set.size()) / (end - start) + "个/秒");
     }
+}
+
+
+/**
+ * 承载生成唯一ID的值
+ */
+class Node {
+    private static volatile long current = -1;
+    /**
+     * 开始范围
+     */
+    private final long start;
+    /**
+     * 截止范围
+     */
+    private final long end;
+
+
+    public Node(long start, long end) {
+        this.start = start;
+        this.end = end;
+        //为了后续的都执行++ 操作
+        current = start - 1;
+    }
+
+    /**
+     * 判断是否为空，等待回收
+     */
+    boolean isEmpty() {
+        return current == end;
+    }
+
+    /**
+     * 计算是否超过了阀值
+     */
+    boolean isUpLoad(long threshold) {
+        if (current + threshold > end) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 获得ID值
+     *
+     * @return
+     */
+    public synchronized long getId() {
+        if (current == -1L) {
+            throw new IdIllgealException("检查当前获取的current是否正确");
+        }
+        return ++current;
+    }
+
 }
