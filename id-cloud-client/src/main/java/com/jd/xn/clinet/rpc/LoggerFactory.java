@@ -1,4 +1,4 @@
-package com.jd.xn.clinet.toplink;
+package com.jd.xn.clinet.rpc;
 
 /**
  * 日志工厂类
